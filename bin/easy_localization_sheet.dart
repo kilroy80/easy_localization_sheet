@@ -9,6 +9,7 @@ void main(List<String> arguments) async {
   try {
     final sheetFile = await utils.getCSVSheet(
       url: configs.csvUrl,
+      backPath: configs.csvBackup,
       forPackage: configs.packageName,
     );
     sheet_parser.parseSheet(
@@ -38,6 +39,29 @@ void main(List<String> arguments) async {
           ],
         ],
       );
+      if (configs.easyLocalizationGenOutputCodeGenFileName != null) {
+        stdout.writeln('Run easy_localization:generate, Create Code generation From Json');
+        final generatedJsonFileName = configs.easyLocalizationGenOutputCodeGenFileName;
+        await Process.run(
+          'dart',
+          [
+            'run',
+            'easy_localization:generate',
+            '-S',
+            outputDir,
+            '-f',
+            'json',
+            if (generatedDir != null) ...[
+              '-O',
+              generatedDir,
+            ],
+            if (generatedJsonFileName != null) ...[
+              '-o',
+              generatedJsonFileName,
+            ],
+          ],
+        );
+      }
     }
     stdout.writeln('Generate successful');
   } catch (e) {

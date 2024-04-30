@@ -11,12 +11,15 @@ Configs getConfig() {
   final pubspecYaml = loadYaml(pubspecYamlFile.readAsStringSync());
   final easyLocalizationSheetConfigs = pubspecYaml['easy_localization_sheet'];
   String? csvUrl;
+  String? csvBackup;
   String? outputDir;
   bool useEasyLocalizationGen = false;
   String? easyLocalizationGenOutputDir;
   String? easyLocalizationOutputFileName;
+  String? easyLocalizationGenOutputJsonFileName;
   if (easyLocalizationSheetConfigs != null) {
     csvUrl = easyLocalizationSheetConfigs['csv_url'];
+    csvBackup = easyLocalizationSheetConfigs['csv_backup'];
     outputDir = easyLocalizationSheetConfigs['output_dir'];
 
     final generatorConfig =
@@ -24,6 +27,7 @@ Configs getConfig() {
     useEasyLocalizationGen = generatorConfig != null;
     easyLocalizationGenOutputDir = generatorConfig?['output_dir'];
     easyLocalizationOutputFileName = generatorConfig?['output_file_name'];
+    easyLocalizationGenOutputJsonFileName = generatorConfig?['output_code_gen_file_name'];
   }
 
   if (csvUrl == null) {
@@ -32,17 +36,20 @@ Configs getConfig() {
 
   return Configs(
     csvUrl: csvUrl,
+    csvBackup: csvBackup,
     outputDir: outputDir,
     packageName: pubspecYaml['name'],
     useEasyLocalizationGen: useEasyLocalizationGen,
     easyLocalizationGenOutputDir: easyLocalizationGenOutputDir,
     easyLocalizationGenOutputFileName: easyLocalizationOutputFileName,
+    easyLocalizationGenOutputCodeGenFileName: easyLocalizationGenOutputJsonFileName,
   );
 }
 
 /// Get csv file from given url
 Future<File> getCSVSheet({
   required String url,
+  String? backPath,
   File? destFile,
   String? forPackage,
 }) async {
@@ -51,7 +58,9 @@ Future<File> getCSVSheet({
   final file = destFile ??
       File(
         path.join(
-          getTempDir(forPackage: forPackage).path,
+          backPath == null
+              ? getTempDir(forPackage: forPackage).path
+              : getBackupDir(backupPath: backPath).path,
           'data.csv',
         ),
       );
@@ -72,4 +81,18 @@ Directory getTempDir({String? forPackage}) {
     tempDir.createSync(recursive: true);
   }
   return tempDir;
+}
+
+/// Get backup dir
+Directory getBackupDir({String? backupPath}) {
+  final backupDir = Directory(
+    path.join(
+      Directory.current.path,
+      backupPath,
+    ),
+  );
+  if (!backupDir.existsSync()) {
+    backupDir.createSync(recursive: true);
+  }
+  return backupDir;
 }
