@@ -3,6 +3,7 @@ class Configs {
   final String csvUrl;
   final String? csvBackup;
   final String? outputDir;
+  final String? googleServiceJsonKey;
   final String? packageName;
   final bool useEasyLocalizationGen;
   final String? easyLocalizationGenOutputDir;
@@ -13,6 +14,7 @@ class Configs {
     required this.csvUrl,
     this.csvBackup,
     this.outputDir,
+    this.googleServiceJsonKey,
     this.packageName,
     required this.useEasyLocalizationGen,
     this.easyLocalizationGenOutputDir,

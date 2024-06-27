@@ -11,6 +11,7 @@ void main(List<String> arguments) async {
       url: configs.csvUrl,
       backPath: configs.csvBackup,
       forPackage: configs.packageName,
+      googleServiceJsonKey: configs.googleServiceJsonKey,
     );
     sheet_parser.parseSheet(
       sheetFile: sheetFile,

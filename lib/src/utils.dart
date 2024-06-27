@@ -1,8 +1,11 @@
 import 'dart:io';
 
 import 'package:easy_localization_sheet/src/configs.dart';
+import 'package:googleapis/sheets/v4.dart';
 import 'package:path/path.dart' as path;
 import 'package:yaml/yaml.dart';
+
+import 'google_auth_client.dart';
 
 /// Get config from pubspec.yaml
 Configs getConfig() {
@@ -14,10 +17,12 @@ Configs getConfig() {
   String? csvBackup;
   String? outputDir;
   bool useEasyLocalizationGen = false;
+  String? googleServiceKey;
   String? easyLocalizationGenOutputDir;
   String? easyLocalizationOutputFileName;
   String? easyLocalizationGenOutputJsonFileName;
   if (easyLocalizationSheetConfigs != null) {
+    googleServiceKey = easyLocalizationSheetConfigs['google_service_key'];
     csvUrl = easyLocalizationSheetConfigs['csv_url'];
     csvBackup = easyLocalizationSheetConfigs['csv_backup'];
     outputDir = easyLocalizationSheetConfigs['output_dir'];
@@ -38,6 +43,7 @@ Configs getConfig() {
     csvUrl: csvUrl,
     csvBackup: csvBackup,
     outputDir: outputDir,
+    googleServiceJsonKey : googleServiceKey,
     packageName: pubspecYaml['name'],
     useEasyLocalizationGen: useEasyLocalizationGen,
     easyLocalizationGenOutputDir: easyLocalizationGenOutputDir,
@@ -52,9 +58,9 @@ Future<File> getCSVSheet({
   String? backPath,
   File? destFile,
   String? forPackage,
+  String? googleServiceJsonKey,
 }) async {
-  final request = await HttpClient().getUrl(Uri.parse(url));
-  final response = await request.close();
+
   final file = destFile ??
       File(
         path.join(
@@ -64,8 +70,25 @@ Future<File> getCSVSheet({
           'data.csv',
         ),
       );
-  await response.pipe(file.openWrite());
-  return file;
+
+  if (googleServiceJsonKey == null || googleServiceJsonKey.isEmpty) {
+    /// normal http request
+    final request = await HttpClient().getUrl(Uri.parse(url));
+    final response = await request.close();
+    await response.pipe(file.openWrite());
+    return file;
+  } else {
+    /// google auth http request
+    final authClient = GoogleAuthClient(
+      scopes: [
+        SheetsApi.spreadsheetsScope,
+      ],
+      serviceKey: await File(googleServiceJsonKey).readAsString(),
+    );
+    final client = await authClient.client();
+    final response = await client.get(Uri.parse(url));
+    return await file.writeAsBytes(response.bodyBytes);
+  }
 }
 
 /// Get template dir
